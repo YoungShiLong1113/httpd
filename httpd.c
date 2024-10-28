@@ -4,10 +4,14 @@
 #include <WinSock2.h>
 #pragma comment(lib,"WS2_32.lib")
 
+#define PRINTF(str) printf("[%s - %d]"#str"=%s", __func__, __LINE__-5, str);
+
 void ErrorDie(const char* str) {
 	perror(str);
 	exit(1);
 }
+
+
 
 //实现网络初始化
 //返回值：套接字（服务器端）
@@ -30,9 +34,7 @@ int StartUp(unsigned short* port) {
 	}
 
 	//2.创建套接字
-	int serverSocket = socket(PF_INET,//套接字类型：网络套接字，文件套接字，此处为网络
-		SOCK_STREAM,//数据流
-		IPPROTO_TCP);
+	int serverSocket = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);//套接字类型：网络套接字，文件套接字，此处为网络，//数据流，//协议
 	if (serverSocket < 0) {
 		//提示并结束
 		ErrorDie("serverSocket");
@@ -80,16 +82,56 @@ int StartUp(unsigned short* port) {
 	return serverSocket;
 }
 
-//处理用户信息的线程函数
-DWORD WINAPI accept_request(LPVOID arg) {
+//从指定套接字读取一行，保存到buff，返回实际读取到的字节
+int get_line(int sock,char* buff,int size) {
+	char c = 0;
+	int i = 0;
+	while (i<size-1 && c!='\n') {
+		int n = recv(sock, &c, 1, 0);
+		if (n > 0) {
+			if (c == '\r') {
+				n = recv(sock, &c, 1, MSG_PEEK);
+				if (n > 0 && c == '\n') {
+					recv(sock, &c, 1, 0);
+				}
+				else {
+					c == '\n';
+				}
+			}
+			buff[i++] = c;
+		}
+		else {
+			c = '\n';
+		}
+	}
+	buff[i] = 0;
+	return i;
+}
 
+
+
+//处理用户信息的线程函数
+//get请求：客户端向服务器请求固定资源
+/* 请求行：GET / HTTP/1.1\n			方法名 / URL/版本\n	默认返回资源目录下index.html
+*  请求头部n行：Host: 127.0.0.1:8080\n	关键字: 值\n		服务器主机地址
+*  空行：\n
+*/
+DWORD WINAPI accept_request(LPVOID arg) {
+	//读取一行数据，解析
+	char buff[1024];
+	int client = arg;
+	int numchars = get_line(client,buff,sizeof(buff));
+	PRINTF(buff);
+	
+
+	
 }
 
 int main() {
 	//初始化
-	unsigned short port = 0;//端口号：0-65535
+	unsigned short port = 8000;//端口号：0-65535
 	int serverSocket = StartUp(&port);
-	printf("httpd服务启动，正在监听端口: %d ", port);
+	printf("httpd服务启动，正在监听端口: 127.0.0.1:%d\n", port);
 
 	struct sockaddr_in clint_addr;
 	int client_addr_len = sizeof(clint_addr);
