@@ -63,7 +63,7 @@ int StartUp(unsigned short* port) {
 
 	//¶¯Ì¬·ÖÅä¶Ë¿Ú
 	int nameLen = sizeof(serverAddr);
-	if (*port = 0) {
+	if (*port == 0) {
 		ret = getsockname(serverSocket, (struct sockaddr*)&serverAddr, &nameLen);
 		if (ret < 0) {
 			ErrorDie("getsockname");
