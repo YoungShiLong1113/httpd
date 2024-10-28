@@ -80,16 +80,32 @@ int StartUp(unsigned short* port) {
 	return serverSocket;
 }
 
+//处理用户信息的线程函数
+DWORD WINAPI accept_request(LPVOID arg) {
+
+}
+
 int main() {
 	//初始化
 	unsigned short port = 0;//端口号：0-65535
 	int serverSocket = StartUp(&port);
 	printf("httpd服务启动，正在监听端口: %d ", port);
 
+	struct sockaddr_in clint_addr;
+	int client_addr_len = sizeof(clint_addr);
+	while (1) {
+		int client_sock = accept(serverSocket, &clint_addr, &client_addr_len);//accept负责只监听，有访问时创建新的套接字，accept继续监听
+		if (client_sock < 0) {
+			ErrorDie("accept");
+		}
 
+		//创建线程
+		DWORD threadId = 0;
+		CreateThread(0, 0, accept_request, client_sock, 0, &threadId);
 
-	while (1);
+	}
 
+	closesocket(serverSocket);
 	return 0;
 
 
